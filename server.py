@@ -30,10 +30,10 @@ class Server:
     def __init__(self, host, port, member_count):
         self.HOST: str = host
         self.PORT: int = port
-        self.SERVER: socket
-        self.MEMBER_COUNT: int = member_count
+        self.SERVER: socket  # Instance of the server socket
+        self.MEMBER_COUNT: int = member_count  # Number of members server listen
         self.CLIENTS: List[socket] = []  # List of all clients connected
-        self.BANNED_IP: List[str] = []
+        self.BANNED_IP: List[str] = []  # Ip banned from the chat
 
     def broadcast(self, message: Message):
         """
@@ -60,11 +60,13 @@ class Server:
             except ConnectionResetError:
                 print(f"{address[0]}:{address[1]} has left the chat")
                 client.close()
+                self.CLIENTS.remove(client)
                 break
 
             except ConnectionAbortedError:
                 print(f"{address[0]}:{address[1]} has left the chat")
                 client.close()
+                self.CLIENTS.remove(client)
                 break
 
     def add_members(self):

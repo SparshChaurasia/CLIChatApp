@@ -3,6 +3,10 @@ from server import Message
 import socket
 import pickle
 from threading import Thread
+from datetime import datetime
+
+from rich.console import Console
+from rich.theme import Theme
 
 
 class Client:
@@ -10,18 +14,9 @@ class Client:
     A client to connect to an established chat server
     """
 
-    def __init__(self):
+    def __init__(self, console: Console):
         self.CLIENT: socket
-
-    def print_message(self, message):
-        """
-        Helper function to print message
-        :return: None
-        """
-
-        print(
-            f"[{message.timestamp}] {message.author[0]}:{message.author[1]}> {message.content}"
-        )
+        self.CONSOLE = console
 
     def recieve_message(self):
         """
@@ -36,7 +31,10 @@ class Client:
                 continue
 
             message = pickle.loads(res)
-            self.print_message(message)
+            self.CONSOLE.print(
+                f"[bold][underline][{message.timestamp.strftime('%d/%m/%Y %H:%M:%S')}] "
+                f"[magenta]{message.author[0]}:{message.author[1]}[/][/][/] {message.content}",
+            )
 
     def send_message(self):
         """
@@ -45,7 +43,7 @@ class Client:
         """
 
         while True:
-            message = input("> ")
+            message = input()
             self.CLIENT.send(bytes(message, "utf-8"))
 
     def join_chat(self, host, port):
@@ -53,9 +51,24 @@ class Client:
         Function to connect to a server; recieve and send messages
         :return: None
         """
+
         self.CLIENT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.CLIENT.connect((host, port))
-        print(f"Connected to server Ip: {host}\t Port: {port}")
+
+        try:
+            self.CLIENT.connect((host, port))
+        except ConnectionRefusedError:
+            self.CONSOLE.print(
+                "Failed to connect - Target machine refused to connect", style="error"
+            )
+        except ConnectionResetError:
+            self.CONSOLE.print(
+                "Connnection reset - An existing connection was forcibly closed by the remote host",
+                style="error",
+            )
+
+        self.CONSOLE.print(
+            f"Connected to server Ip: {host}\t Port: {port}", style="debug"
+        )
 
         thread1 = Thread(target=self.recieve_message)
         thread1.start()
@@ -65,11 +78,17 @@ class Client:
 
 
 def main():
+    custom_theme = Theme(
+        {"success": "bold green", "error": "bold magenta", "debug": "bold white"}
+    )
+    console = Console(theme=custom_theme)
+
     host = input("Enter host ip to connect: ")
     port = int(input("Enter host port number: "))
 
-    c = Client()
+    c = Client(console)
     c.join_chat(host, port)
+    # c.join_chat("localhost", 9999)
 
 
 if __name__ == "__main__":

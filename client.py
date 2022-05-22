@@ -7,6 +7,7 @@ from datetime import datetime
 
 from rich.console import Console
 from rich.theme import Theme
+from rich.prompt import Prompt, IntPrompt
 
 
 class Client:
@@ -60,11 +61,13 @@ class Client:
             self.CONSOLE.print(
                 "Failed to connect - Target machine refused to connect", style="error"
             )
+            return
         except ConnectionResetError:
             self.CONSOLE.print(
                 "Connnection reset - An existing connection was forcibly closed by the remote host",
                 style="error",
             )
+            return
 
         self.CONSOLE.print(
             f"Connected to server Ip: {host}\t Port: {port}", style="debug"
@@ -83,8 +86,8 @@ def main():
     )
     console = Console(theme=custom_theme)
 
-    host = input("Enter host ip to connect: ")
-    port = int(input("Enter host port number: "))
+    host = Prompt.ask("Enter host ip to connect", default="localhost")
+    port = IntPrompt.ask("Enter host port number", default=9999)
 
     c = Client(console)
     c.join_chat(host, port)

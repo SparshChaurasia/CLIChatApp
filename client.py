@@ -1,5 +1,6 @@
 from server import Message
 
+import os
 import socket
 import pickle
 from threading import Thread
@@ -16,8 +17,8 @@ class Client:
     """
 
     def __init__(self, console: Console):
-        self.CLIENT: socket
-        self.CONSOLE = console
+        self.CLIENT: socket  # Instance of the client socket connnection
+        self.CONSOLE = console  # Standard output screen
 
     def recieve_message(self):
         """
@@ -32,10 +33,7 @@ class Client:
                 continue
 
             message = pickle.loads(res)
-            self.CONSOLE.print(
-                f"[bold][underline][{message.timestamp.strftime('%d/%m/%Y %H:%M:%S')}] "
-                f"[magenta]{message.author[0]}:{message.author[1]}[/][/][/] {message.content}",
-            )
+            self.CONSOLE.print(str(message))
 
     def send_message(self):
         """
@@ -44,7 +42,13 @@ class Client:
         """
 
         while True:
-            message = input()
+            try:
+                message = input()
+            except KeyboardInterrupt:
+                os._exit(1)
+            except EOFError:
+                os._exit(1)
+
             self.CLIENT.send(bytes(message, "utf-8"))
 
     def join_chat(self, host, port):
@@ -53,7 +57,7 @@ class Client:
         :return: None
         """
 
-        self.CLIENT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.CLIENT = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
 
         try:
             self.CLIENT.connect((host, port))

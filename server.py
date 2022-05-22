@@ -7,6 +7,10 @@ from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
 
+from rich.console import Console
+from rich.theme import Theme
+from rich.prompt import Prompt, IntPrompt
+
 
 @dataclass
 class Message:
@@ -19,7 +23,7 @@ class Message:
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     def __repr__(self):
-        return self.content
+        return f"[bold][underline][{self.timestamp.strftime('%d/%m/%Y %H:%M:%S')}] [magenta]{self.author[0]}:{self.author[1]}[/][/][/] {self.content}"
 
 
 class Server:
@@ -27,12 +31,13 @@ class Server:
     Groups the functionality to host a chatroom where suitable clients could connect
     """
 
-    def __init__(self, host, port, member_count):
+    def __init__(self, host, port, member_count, console):
         self.HOST: str = host
         self.PORT: int = port
         self.SERVER: socket  # Instance of the server socket
         self.MEMBER_COUNT: int = member_count  # Number of members server listen
         self.CLIENTS: List[socket] = []  # List of all clients connected
+        self.CONSOLE: Console = console  # Sandard output screen
         self.BANNED_IP: List[str] = []  # Ip banned from the chat
 
     def broadcast(self, message: Message):
@@ -58,15 +63,24 @@ class Server:
                 self.broadcast(message)
 
             except ConnectionResetError:
-                print(f"{address[0]}:{address[1]} has left the chat")
-                client.close()
                 self.CLIENTS.remove(client)
+                client.close()
+
+                self.CONSOLE.print(
+                    f"{address[0]}:{address[1]} has left the chat", style="error"
+                )
+                self.broadcast(f"{address[0]}:{address[1]} has left the chat")
                 break
 
             except ConnectionAbortedError:
-                print(f"{address[0]}:{address[1]} has left the chat")
-                client.close()
                 self.CLIENTS.remove(client)
+                client.close()
+
+                self.CONSOLE.print(
+                    f"{address[0]}:{address[1]} has left the chat",
+                    style="error",
+                )
+                self.broadcast(f"{address[0]}:{address[1]} has left the chat")
                 break
 
     def add_members(self):
@@ -78,15 +92,19 @@ class Server:
         while True:
             client, address = self.SERVER.accept()
 
-            if address in self.BANNED_IP:
-                client.send(
-                    bytes("Refused to connect - Your ip is blacklisted", "utf-8")
+            if address[0] in self.BANNED_IP:
+                self.CONSOLE.print(
+                    f"{address[0]} was denied connection to the server - Restricted user tried to join",
+                    style="debug",
                 )
                 client.close()
                 continue
 
             start_new_thread(self.recive_messages, (client, address))
-            print(f"{address[0]}:{address[1]} joined the chat!")
+            self.CONSOLE.print(
+                f"{address[0]}:{address[1]} joined the chat!", style="success"
+            )
+            self.broadcast(f"{address[0]}:{address[1]} joined the chat!")
             self.CLIENTS.append(client)
 
     def host_chat(self):
@@ -95,23 +113,33 @@ class Server:
         :return: None
         """
 
-        self.SERVER = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.SERVER = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         self.SERVER.bind((self.HOST, self.PORT))
-        print(f"Server started at Ip: {self.HOST}\t Port: {self.PORT}")
+        self.CONSOLE.print(
+            f"Server started at Ip: {self.HOST}\t Port: {self.PORT}", style="success"
+        )
 
         self.SERVER.listen(self.MEMBER_COUNT)
-        print("Waiting for connections...")
+        self.CONSOLE.print("Waiting for connections...", style="debug")
 
         thread1 = threading.Thread(target=self.add_members)
         thread1.start()
 
 
 def main():
-    host = input("Enter an ip to host the chatroom: ")
-    port = int(input("Enter port number: "))
-    member_count = int(input("Enter the number of members for the server to listen: "))
+    custom_theme = Theme(
+        {"success": "bold green", "error": "bold magenta", "debug": "bold white"}
+    )
 
-    s = Server(host, port, member_count)
+    console = Console(theme=custom_theme)
+
+    host = Prompt.ask("Enter an ip to host the chatroom", default="localhost")
+    port = IntPrompt.ask("Enter port number")
+    member_count = IntPrompt.ask(
+        "Enter the number of members server could connect", default=5
+    )
+
+    s = Server(host, port, member_count, console)
     s.host_chat()
 
 

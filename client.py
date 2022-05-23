@@ -95,7 +95,6 @@ def main():
 
     c = Client(console)
     c.join_chat(host, port)
-    # c.join_chat("localhost", 9999)
 
 
 if __name__ == "__main__":

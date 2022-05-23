@@ -1,8 +1,9 @@
 import socket
+import random
 import pickle
-from typing import Tuple, List
 import threading
 from _thread import start_new_thread
+from typing import Tuple, List, Dict
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
@@ -19,11 +20,11 @@ class Message:
     """
 
     content: str
-    author: Tuple[str, int]
+    username: str
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     def __repr__(self):
-        return f"[bold][underline][{self.timestamp.strftime('%d/%m/%Y %H:%M:%S')}] [magenta]{self.author[0]}:{self.author[1]}[/][/][/] {self.content}"
+        return f"[bold][underline][{self.timestamp.strftime('%d/%m/%Y %H:%M:%S')}] [magenta]{self.username}[/][/][/] {self.content}"
 
 
 class Server:
@@ -36,8 +37,10 @@ class Server:
         self.PORT: int = port
         self.SERVER: socket  # Instance of the server socket
         self.MEMBER_COUNT: int = member_count  # Number of members server listen
-        self.CLIENTS: List[socket] = []  # List of all clients connected
         self.CONSOLE: Console = console  # Sandard output screen
+
+        # Dictionary of all clients connected and their usernames
+        self.CLIENTS: Dict[(str, socket)] = {}
         self.BANNED_IP: List[str] = []  # Ip banned from the chat
 
     def broadcast(self, message: Message):
@@ -46,11 +49,11 @@ class Server:
         :return: None
         """
 
-        for client in self.CLIENTS:
+        for client in self.CLIENTS.values():
             obj = pickle.dumps(message)
             client.send(obj)
 
-    def recive_messages(self, client, address):
+    def recive_messages(self, client, username):
         """
         Helper function to listen to the client and broadcast the message to all the other clients
         :return: None
@@ -59,29 +62,39 @@ class Server:
         while True:
             try:
                 res = client.recv(1024).decode()
-                message = Message(res, address)
+                res.strip()  # Remove all extra spaaces and new lines
+
+                message = Message(res, username)
                 self.broadcast(message)
 
             except ConnectionResetError:
-                self.CLIENTS.remove(client)
+                del self.CLIENTS[username]
+
                 client.close()
 
-                self.CONSOLE.print(
-                    f"{address[0]}:{address[1]} has left the chat", style="error"
-                )
-                self.broadcast(f"{address[0]}:{address[1]} has left the chat")
+                self.CONSOLE.print(f"{username!s} has left the chat", style="error")
+                self.broadcast(f"{username!s} has left the chat")
                 break
 
             except ConnectionAbortedError:
-                self.CLIENTS.remove(client)
+                del self.CLIENTS[username]
+
                 client.close()
 
-                self.CONSOLE.print(
-                    f"{address[0]}:{address[1]} has left the chat",
-                    style="error",
-                )
-                self.broadcast(f"{address[0]}:{address[1]} has left the chat")
+                self.CONSOLE.print(f"{username!s} has left the chat", style="error")
+                self.broadcast(f"{username!s} has left the chat")
                 break
+
+    def genrate_username(self):
+        username = f"user{random.randrange(10000)}"
+        while username in self.CLIENTS.keys():
+            username = f"user{random.randrange(10000)}"
+
+        return username
+
+    def validate_username(self, username):
+        if username not in self.CLIENTS.keys():
+            return True
 
     def add_members(self):
         """
@@ -100,12 +113,31 @@ class Server:
                 client.close()
                 continue
 
-            start_new_thread(self.recive_messages, (client, address))
-            self.CONSOLE.print(
-                f"{address[0]}:{address[1]} joined the chat!", style="success"
-            )
-            self.broadcast(f"{address[0]}:{address[1]} joined the chat!")
-            self.CLIENTS.append(client)
+            default_username = self.genrate_username()
+            while True:
+                message = Message(
+                    f"Enter your username - suggestion: {default_username!s}", "Server"
+                )
+                obj = pickle.dumps(message)
+                client.send(obj)
+
+                try:
+                    username = client.recv(1024).decode()
+                    username.strip()
+                except EOFError:
+                    self.CONSOLE.print(
+                        f"{address[0]}:{address[1]} failed to join",
+                        style="error",
+                    )
+
+                if self.validate_username(username):
+                    self.CLIENTS.update({username: client})
+                    break
+
+            start_new_thread(self.recive_messages, (client, username))
+
+            self.CONSOLE.print(f"{username!s} joined the chat!", style="success")
+            self.broadcast(f"{username!s} joined the chat!")
 
     def host_chat(self):
         """

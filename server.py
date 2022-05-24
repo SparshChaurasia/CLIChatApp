@@ -1,30 +1,16 @@
+from utility import Message
+
 import socket
 import random
 import pickle
 import threading
 from _thread import start_new_thread
 from typing import Tuple, List, Dict
-from dataclasses import dataclass
-from dataclasses import field
-from datetime import datetime
+
 
 from rich.console import Console
 from rich.theme import Theme
 from rich.prompt import Prompt, IntPrompt
-
-
-@dataclass
-class Message:
-    """
-    Dataclass to hold the attributes of a message
-    """
-
-    content: str
-    username: str
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-
-    def __repr__(self):
-        return f"[bold][underline][{self.timestamp.strftime('%d/%m/%Y %H:%M:%S')}] [magenta]{self.username}[/][/][/] {self.content}"
 
 
 class Server:

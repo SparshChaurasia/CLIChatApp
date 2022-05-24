@@ -1,4 +1,4 @@
-from server import Message
+from utility import Message
 
 import os
 import socket

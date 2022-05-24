@@ -1,6 +1,5 @@
 # Command Line Chat App
-A command line interface chat app built with pyhton - socket and multithreading 
-No asynchronous farmework used
+A command line interface chat app built with pyhton - socket and multithreading
 
 ## Running 
 #### Make sure to get python 3.9 or higher
@@ -37,6 +36,10 @@ Clone the repository and run the server.py file on localhost or your public ip
 
 #### Join the chat!
 Anyone could join the chat using the client.py file given, the ip and the port number
+
+## Screenshots
+![chat-preview](/images/chat-preview.png)
+![terminal-server-preview](/images/terminal-server-preview.JPG)
 
 ## Documentation
 - [socket documentation — Low-level networking interface](https://docs.python.org/3/library/socket.html)

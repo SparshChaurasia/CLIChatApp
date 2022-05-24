@@ -86,6 +86,11 @@ class Server:
                 break
 
     def genrate_username(self):
+        """
+        Helper function to generate a unique username
+        :return: str
+        """
+
         username = f"user{random.randrange(10000)}"
         while username in self.CLIENTS.keys():
             username = f"user{random.randrange(10000)}"
@@ -93,6 +98,11 @@ class Server:
         return username
 
     def validate_username(self, username):
+        """
+        Helper function to check if the username is unique
+        :return: bool
+        """
+
         if username not in self.CLIENTS.keys():
             return True
 

@@ -1,4 +1,4 @@
-# Command Line Chat App
+# Point Chat - Command Line Chat App
 A command line interface chat app built with pyhton - socket and multithreading
 
 ## Running 

@@ -1,14 +1,14 @@
-from utility import Message
-
 import os
-import socket
 import pickle
-from threading import Thread
+import socket
 from datetime import datetime
+from threading import Thread
 
 from rich.console import Console
+from rich.prompt import IntPrompt, Prompt
 from rich.theme import Theme
-from rich.prompt import Prompt, IntPrompt
+
+from utility import Message
 
 
 class Client:
@@ -92,6 +92,8 @@ def main():
 
     host = Prompt.ask("Enter host ip to connect", default="localhost")
     port = IntPrompt.ask("Enter host port number", default=9999)
+
+    console.clear()
 
     c = Client(console)
     c.join_chat(host, port)

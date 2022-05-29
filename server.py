@@ -1,16 +1,15 @@
-from utility import Message
-
-import socket
-import random
 import pickle
+import random
+import socket
 import threading
 from _thread import start_new_thread
-from typing import Tuple, List, Dict
-
+from typing import Dict, List, Tuple
 
 from rich.console import Console
+from rich.prompt import IntPrompt, Prompt
 from rich.theme import Theme
-from rich.prompt import Prompt, IntPrompt
+
+from utility import Message
 
 
 class Server:
@@ -166,6 +165,8 @@ def main():
     member_count = IntPrompt.ask(
         "Enter the number of members server could connect", default=5
     )
+
+    console.clear()
 
     s = Server(host, port, member_count, console)
     s.host_chat()

@@ -1,6 +1,13 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from rich.theme import Theme
+from rich.markdown import Markdown
+
+custom_theme = Theme(
+    {"success": "bold green", "error": "bold magenta", "debug": "bold white"}
+)
+
 
 @dataclass
 class Message:

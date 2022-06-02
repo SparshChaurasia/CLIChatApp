@@ -1,10 +1,10 @@
 import sys
 
-import server
-import client
-
 from rich.console import Console
 from rich.prompt import Prompt
+
+import client
+import server
 
 
 def main():

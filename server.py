@@ -10,6 +10,7 @@ from rich.prompt import IntPrompt, Prompt
 from rich.theme import Theme
 
 from utility import Message
+from utility import custom_theme
 
 
 class Server:
@@ -50,6 +51,9 @@ class Server:
                 res.strip()  # Remove all extra spaaces and new lines
 
                 message = Message(res, username)
+                if res.startswith("/md"):
+                    message.markdown = True
+
                 self.broadcast(message)
 
             except ConnectionResetError:
@@ -124,6 +128,11 @@ class Server:
                         f"{address[0]}:{address[1]} failed to join",
                         style="error",
                     )
+                except ConnectionResetError:
+                    self.CONSOLE.print(
+                        f"{address[0]}:{address[1]} failed to join due to connectin reset",
+                        style="error",
+                    )
 
                 if self.validate_username(username):
                     self.CLIENTS.update({username: client})
@@ -154,10 +163,6 @@ class Server:
 
 
 def main():
-    custom_theme = Theme(
-        {"success": "bold green", "error": "bold magenta", "debug": "bold white"}
-    )
-
     console = Console(theme=custom_theme)
 
     host = Prompt.ask("Enter an ip to host the chatroom", default="localhost")

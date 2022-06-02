@@ -7,8 +7,10 @@ from threading import Thread
 from rich.console import Console
 from rich.prompt import IntPrompt, Prompt
 from rich.theme import Theme
+from rich.markdown import Markdown
 
 from utility import Message
+from utility import custom_theme
 
 
 class Client:
@@ -28,9 +30,6 @@ class Client:
 
         while True:
             res = self.CLIENT.recv(1024)
-
-            if not res:
-                continue
 
             message = pickle.loads(res)
             self.CONSOLE.print(str(message))
@@ -85,9 +84,6 @@ class Client:
 
 
 def main():
-    custom_theme = Theme(
-        {"success": "bold green", "error": "bold magenta", "debug": "bold white"}
-    )
     console = Console(theme=custom_theme)
 
     host = Prompt.ask("Enter host ip to connect", default="localhost")
